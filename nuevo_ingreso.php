@@ -8,9 +8,35 @@ $productos = $conn->query("SELECT * FROM producto");
 $clientes = $conn->query("SELECT * FROM clientes");
 $empleados = $conn->query("SELECT * FROM usuarios WHERE rol IN ('usuario', 'empleado')");
 $proveedores = $conn->query("SELECT * FROM proveedores");  // Consulta para obtener proveedores
+// Obtener el nombre del proveedor seleccionado
+$proveedor = '';
+if (!empty($proveedor)) {
+    $proveedor_result = $conn->query("SELECT proveedor FROM proveedores WHERE id = $proveedor");
+    if ($proveedor_result->num_rows > 0) {
+        $proveedor_data = $proveedor_result->fetch_assoc();
+        $proveedor_nombre = $proveedor_data['proveedor'];
+    }
+}
+
+// Obtener el nombre del cliente seleccionado
+$cliente = '';
+if (!empty($cliente)) {
+    $cliente_result = $conn->query("SELECT nombre FROM clientes WHERE id = $cliente");
+    if ($cliente_result->num_rows > 0) {
+        $cliente_data = $cliente_result->fetch_assoc();
+        $cliente_nombre = $cliente_data['nombre'];
+    }
+}
 
 // Verificar si se ha enviado el formulario
-// Verificar si se ha enviado el formulario
+// Obtener los productos desde la base de datos
+$productos = $conn->query("SELECT * FROM producto");
+
+// Inicia las variables de subtotal, IVA y total
+$subtotal = 0;
+$iva = 0;
+$total = 0;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Recibir los datos del formulario
     $fecha = $_POST['fecha'];
@@ -25,20 +51,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $proveedor = $_POST['proveedor'];
     $tipo_factura = $_POST['tipo_factura'];
 
-    // Inicializar valores monetarios y asegurarse de que sean numéricos
-    $subtotal = $_POST['subtotal'];
-    $iva = $_POST['iva'];
-    $total = $_POST['total'];
-    
-
     // Verificar si hay productos seleccionados
     if (!empty($_POST['productos']) && is_array($_POST['productos'])) {
         foreach ($_POST['productos'] as $index => $producto_id) {
+            // Obtener el precio de venta del producto seleccionado
+            $producto_result = $conn->query("SELECT Precio_de_Venta FROM producto WHERE id = $producto_id");
+            $producto_data = $producto_result->fetch_assoc();
+            $precio = $producto_data['Precio_de_Venta'];
+            
             $cantidad = isset($_POST['cantidad'][$index]) ? floatval($_POST['cantidad'][$index]) : 0;
-            $precio = isset($_POST['precio'][$index]) ? floatval($_POST['precio'][$index]) : 0;
 
-            // Asegurar que la cantidad y el precio sean valores válidos
+            // Asegurarse de que la cantidad y el precio sean valores válidos
             if ($cantidad > 0 && $precio > 0) {
+                // Sumar al subtotal
                 $subtotal += $precio * $cantidad;
             }
         }
@@ -54,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
-            "sssssssssssddds",  // Corrección en los tipos de datos
+            "sssssssssssddds",  // Tipos de datos de las columnas
             $fecha, 
             $vencimiento, 
             $tipo_ingreso, 
@@ -76,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Obtener el ID del ingreso recién insertado
             $ingreso_id = $conn->insert_id;
 
-            // Insertar los productos en la tabla detalle_ingreso
+            // Insertar los productos en la tabla ingreso_productos
             foreach ($_POST['productos'] as $index => $producto_id) {
                 $cantidad = isset($_POST['cantidad'][$index]) ? floatval($_POST['cantidad'][$index]) : 0;
                 $precio = isset($_POST['precio'][$index]) ? floatval($_POST['precio'][$index]) : 0;
@@ -102,6 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "❌ Error en la preparación de la consulta: " . $conn->error;
     }
 }
+
 
 
 ?>

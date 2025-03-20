@@ -64,7 +64,9 @@ $total_paginas = ceil($total_productos / $productos_por_pagina);
             <input type="text" name="filtro" class="form-control" placeholder="Buscar por nombre o código" value="<?php echo isset($_POST['filtro']) ? $_POST['filtro'] : ''; ?>">
             <button type="submit" class="btn btn-primary mt-2">Filtrar</button>
         </form>
+    
         <button class="btn btn-success" onclick="window.location.href='nuevo-producto.php'">+ Producto</button>
+        <a id="exportExcelBtn" class="btn btn-success" href="exportar_productos_excel.php">Exportar a Excel</a>
         <button class="btn btn-success" onclick="toggleImportarForm()">Importar Producto</button>
 
         <!-- Formulario de importación -->
@@ -78,6 +80,8 @@ $total_paginas = ceil($total_productos / $productos_por_pagina);
                 <button type="submit" class="btn btn-primary">Subir CSV</button>
             </form>
         </div>
+
+
 
         <!-- Tabla de productos -->
         <table class="table mt-4">
@@ -143,6 +147,19 @@ $total_paginas = ceil($total_productos / $productos_por_pagina);
             </ul>
         </nav>
     </div>
+    <script>
+    // Función para mostrar/ocultar el formulario
+    function toggleImportarForm() {
+        var form = document.getElementById("importarForm");
+        
+        // Verifica si el formulario está visible, y alterna su estado
+        if (form.style.display === "none" || form.style.display === "") {
+            form.style.display = "block";  // Muestra el formulario
+        } else {
+            form.style.display = "none";   // Oculta el formulario
+        }
+    }
+</script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>

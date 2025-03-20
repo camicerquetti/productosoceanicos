@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $categoria_pago = $_POST['categoria_pago'];
     $descripcion = $_POST['descripcion'];
     $cuenta_id = $_POST['cuenta']; // Obtener la cuenta seleccionada
+    $vendedor = $_SESSION['usuario']; // Asumiendo que el nombre del usuario está en la sesión
 
     // Calcular el subtotal, IVA y total
     $subtotal = 0;
@@ -50,16 +51,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-
     // Calcular IVA (21%)
     $iva = $subtotal * 0.21;
 
     // Total con IVA
     $total = $subtotal + $iva;
 
+    // Convertir los productos seleccionados a JSON
+    $productos_json = json_encode($productos_seleccionados);
+
     // Insertar la compra en la base de datos
-    $ingreso = new Ingreso($conn);
-    $ingreso->insertarCompra($fecha, $proveedor, $estado, $metodo_pago, $categoria_pago, $descripcion, $subtotal, $iva, $total, $productos_seleccionados);
+    $query = "INSERT INTO compras (emision, proveedor, categoria, subtotal, descuento, cantidad, total, vencimientoPago, tipoCompra, producto, precio, iva, notaInterna, contador, estado, vendedor, productos)
+              VALUES ('$fecha', '$proveedor', '$categoria_pago', '$subtotal', 0, 0, '$total', NULL, '$metodo_pago', '$descripcion', '$precio_unitario', '$iva', '$descripcion', '$vendedor', '$estado', '$vendedor', '$productos_json')";
+
+    if ($conn->query($query) === TRUE) {
+        echo "Compra insertada correctamente.";
+    } else {
+        echo "Error al insertar la compra: " . $conn->error;
+    }
 
     // Actualizar el saldo de la cuenta seleccionada
     $cuenta = $conn->query("SELECT * FROM cuentas WHERE Id_cuenta = $cuenta_id")->fetch_assoc();
@@ -169,8 +178,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </select>
             </div>
 
+            <!-- Vendedor (Nombre del usuario en la sesión) -->
+            <div class="mb-3">
+                <label for="vendedor" class="form-label">Vendedor</label>
+                <input type="text" name="vendedor" class="form-control" value="<?php echo $_SESSION['usuario']; ?>" readonly>
+            </div>
+
             <!-- Productos -->
             <div id="productos-container"></div>
+
+            <!-- Monto Total -->
+            <div class="mb-3">
+                <label for="total" class="form-label">Total de la Compra</label>
+                <input type="text" name="total" id="total" class="form-control" readonly>
+            </div>
 
             <!-- Botón para agregar productos -->
             <button type="button" id="agregar-producto" class="btn btn-secondary mt-2">+ Agregar Producto</button>
@@ -182,6 +203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
         // Convertir el array de productos a JSON y pasarlo a JavaScript
         const productos = <?php echo json_encode($productosArray); ?>;
+        let totalCompra = 0;  // Variable para mantener el total de la compra
 
         // Función para agregar un producto al formulario
         function agregarProducto(index) {
@@ -194,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 options += `<option value="${producto.id}" data-precio="${producto.Costo}" data-nombre="${producto.Nombre}">${producto.Nombre} - $${parseFloat(producto.Costo).toFixed(2)}</option>`;
             });
 
-            productItem.innerHTML = `
+            productItem.innerHTML = ` 
                 <select name="productos[${index}]" class="form-control" id="producto_${index}" required onchange="actualizarPrecio(${index})">
                     ${options}
                 </select>
@@ -218,9 +240,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (precioTotal > 0) {
                 precioInput.value = '$' + precioTotal.toFixed(2);
+                actualizarTotalCompra();
             } else {
                 precioInput.value = '';
             }
+        }
+
+        // Actualizar el monto total de la compra
+        function actualizarTotalCompra() {
+            totalCompra = 0;
+
+            // Sumar los valores de todos los productos
+            const precios = document.querySelectorAll('[name^="precio"]');
+            precios.forEach(precio => {
+                const precioTotal = parseFloat(precio.value.replace('$', '')) || 0;
+                totalCompra += precioTotal;
+            });
+
+            // Mostrar el total en el campo correspondiente
+            document.getElementById('total').value = '$' + totalCompra.toFixed(2);
         }
 
         // Agregar el primer producto al cargar la página

@@ -100,6 +100,18 @@ $total_paginas = ceil($total_proveedores / $proveedores_por_pagina);
         }
     }
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let exportBtn = document.getElementById("exportExcelBtn");
+        if (exportBtn) {
+            exportBtn.addEventListener("click", function (event) {
+                event.preventDefault(); // Evita que el enlace recargue la página
+                window.location.href = "exportar_proveedores_excel.php"; // Redirige manualmente
+            });
+        }
+    });
+</script>
+
 
 <!DOCTYPE html>
 <html lang="es">
@@ -138,10 +150,16 @@ $total_paginas = ceil($total_proveedores / $proveedores_por_pagina);
         </form>
         <button class="btn btn-success" onclick="window.location.href='nuevo-proveedor.php'">+ Proveedor</button>
 
-        <!-- Botón verde para mostrar el formulario de importación -->
-        <button class="btn btn-success" onclick="toggleImportarForm()">Importar Proveedor</button>
+       
+<!-- Botón para exportar a Excel -->
+<!-- Botón para exportar a CSV -->
+<a id="exportExcelBtn" class="btn btn-success" href="exportar_proveedores_excel.php">Exportar a Excel</a>
+ <!-- Botón verde para mostrar el formulario de importación -->
+ <button class="btn btn-success" onclick="toggleImportarForm()">Importar Proveedor</button>
 
-        <!-- Formulario de importación de proveedores -->
+
+
+<!-- Formulario de importación de proveedores -->
         <div id="importarForm" class="mt-3">
             <h3>Importar Proveedores desde CSV</h3>
             <form action="importar_proveedores.php" method="POST" enctype="multipart/form-data">
@@ -219,6 +237,19 @@ $total_paginas = ceil($total_proveedores / $proveedores_por_pagina);
             </ul>
         </nav>
     </div>
+    <script>
+    // Función para mostrar/ocultar el formulario
+    function toggleImportarForm() {
+        var form = document.getElementById("importarForm");
+        
+        // Verifica si el formulario está visible, y alterna su estado
+        if (form.style.display === "none" || form.style.display === "") {
+            form.style.display = "block";  // Muestra el formulario
+        } else {
+            form.style.display = "none";   // Oculta el formulario
+        }
+    }
+</script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>

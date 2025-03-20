@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Cuenta -->
             <div class="mb-3">
     <label for="cuenta" class="form-label">Cuenta</label>
-    <select name="cuenta_id" class="form-control" required>
+    <select name="cuenta" class="form-control" required>
         <?php
         // Consulta para obtener las cuentas desde la tabla "cuentas"
         $query_cuentas = "SELECT Id_cuenta, Cuenta FROM cuentas";

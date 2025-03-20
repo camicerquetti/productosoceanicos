@@ -65,7 +65,12 @@ $total_paginas = ceil($total_ingresos / $ingresos_por_pagina);
         <!-- Botón "+ INGRESO" -->
         <a href="nuevo_ingreso.php" class="btn btn-success mb-3">
             <strong>+ INGRESO</strong>
+            
         </a>
+        <a id="exportExcelBtn" class="btn btn-success mb-3" href="exportar_ventas_excel.php">Exportar a Excel</a>
+
+
+
 
         <!-- Formulario de filtro -->
         <form method="POST">

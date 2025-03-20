@@ -15,6 +15,12 @@ while ($row = $productosQuery->fetch_assoc()) {
 
 // Verificar si se ha enviado el formulario
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Validar que todos los campos necesarios estén presentes
+    if (empty($_POST['fecha']) || empty($_POST['proveedor']) || empty($_POST['estado']) || empty($_POST['metodo_pago']) || empty($_POST['categoria_pago']) || empty($_POST['descripcion']) || empty($_POST['productos'])) {
+        echo "Todos los campos son obligatorios.";
+        exit();
+    }
+
     // Recibir los datos del formulario
     $fecha = $_POST['fecha'];
     $proveedor = $_POST['proveedor'];
@@ -29,86 +35,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $productos_seleccionados = [];
 
     // Recorremos el array de productos seleccionados
-    // Aquí se asume que el índice del array $_POST['productos'] es el id del producto
     foreach ($_POST['productos'] as $producto_id => $cantidad) {
-        // Consultamos el producto (puedes optimizar obteniendo todos los datos del array $productosArray si fuera necesario)
-        $producto = $conn->query("SELECT * FROM producto WHERE id = $producto_id")->fetch_assoc();
-        $precio_unitario = $producto['precio'];
-        $subtotal += $precio_unitario * $cantidad;
-        $productos_seleccionados[] = [
-            'producto' => $producto['nombre'],
-            'cantidad' => $cantidad,
-            'precio' => $precio_unitario,
-            'total' => $precio_unitario * $cantidad
-        ];
-    }
-    
-    // Calcular IVA (21%)
-    $iva = $subtotal * 0.21;
-    
-    // Total con IVA
-    $total = $subtotal + $iva;
-
-    // Insertar el gasto en la base de datos (suponiendo que existe un método en Gasto para ello)
-    $gasto = new Gasto($conn);
-    $gasto->insertarGasto($fecha, $proveedor, $estado, $metodo_pago, $categoria_pago, $descripcion, $subtotal, $iva, $total, $productos_seleccionados);
-
-    // Redirigir a la lista de gastos
-    header('Location: gastos.php');
-    exit();
-}
-?>
-
-<script>
-    function actualizarPrecio(index) {
-        const productoSelect = document.getElementById('producto_' + index);
-        const cantidadInput = document.getElementById('cantidad_' + index);
-        const precioInput = document.getElementById('precio_' + index);
-
-        const selectedOption = productoSelect.options[productoSelect.selectedIndex];
-        const precioUnitario = parseFloat(selectedOption.getAttribute('data-precio')) || 0;
-        const cantidad = parseInt(cantidadInput.value) || 0;
-
-        const precioTotal = precioUnitario * cantidad;
-
-        if (precioTotal > 0) {
-            precioInput.value = '$' + precioTotal.toFixed(2);
-        } else {
-            precioInput.value = '';
+        // Usamos el array de productos cargado previamente
+        foreach ($productosArray as $producto) {
+            if ($producto['id'] == $producto_id) {
+                $precio_unitario = $producto['precio'];
+                $subtotal += $precio_unitario * $cantidad;
+                $productos_seleccionados[] = [
+                    'producto' => $producto['nombre'],
+                    'cantidad' => $cantidad,
+                    'precio' => $precio_unitario,
+                    'total' => $precio_unitario * $cantidad
+                ];
+            }
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const cantidadInputs = document.querySelectorAll('input[name^="cantidad"]');
-        cantidadInputs.forEach(function(input) {
-            const index = input.name.match(/\d+/)[0];
-            actualizarPrecio(index);
-        });
-    });
+    // Calcular IVA (21%)
+    $iva = $subtotal * 0.21;
 
-    let productCount = 1;
+    // Total con IVA
+    $total = $subtotal + $iva;
 
-    document.getElementById('agregar-producto').addEventListener('click', function() {
-        productCount++;
-        const productItem = document.createElement('div');
-        productItem.classList.add('producto-item');
-        // Usamos backticks para la plantilla y recorremos el array de productos usando PHP embebido
-        productItem.innerHTML = `
-            <select name="productos[${productCount}]" class="form-control" id="producto_${productCount}" required onchange="actualizarPrecio(${productCount})">
-                <option value="">Seleccione un Producto</option>
-                <?php foreach($productosArray as $producto): ?>
-                    <option value="<?php echo $producto['id']; ?>" data-precio="<?php echo $producto['Costo
-                    ']; ?>">
-                        <?php echo $producto['Nombre']; ?> - $<?php echo number_format($producto['Costo'], 2); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <input type="number" name="cantidad[${productCount}]" class="form-control mt-2" id="cantidad_${productCount}" placeholder="Cantidad" min="1" required oninput="actualizarPrecio(${productCount})">
-            <input type="text" name="precio[${productCount}]" class="form-control mt-2" id="precio_${productCount}" placeholder="Precio" readonly>
-        `;
-        document.getElementById('productos-container').appendChild(productItem);
-    });
-</script>
+    // Insertar el gasto en la base de datos
+    $gasto = new Gasto($conn);
+
+    // Asegúrate de que el método insertarGasto esté preparado correctamente
+    if ($gasto->insertarGasto($fecha, $proveedor, $estado, $metodo_pago, $categoria_pago, $descripcion, $subtotal, $iva, $total, $productos_seleccionados)) {
+        // Redirigir con éxito
+        header('Location: gastos.php?status=success');
+        exit();
+    } else {
+        // Redirigir con error
+        header('Location: gastos.php?status=error');
+        exit();
+    }
+}
+?>
+
+
 
 <style>
     .container.mt-4 {
@@ -193,73 +158,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <!-- Productos -->
-            <div id="productos-container">
-           
-            </div>
+            <div id="productos-container"></div>
 
             <button type="button" id="agregar-producto" class="btn btn-secondary mt-2">+ Agregar Producto</button>
 
-            <button type="submit" class="btn btn-primary mt-3">Guardar Gasto</button>
-        </form>
-    </div>
+            <!-- Mostrar el monto total -->
+            <div class="mt-3">
+                <h4>Total: <span id="total">$0.00</span></h4>
+            </div>
+    <button type="submit" class="btn btn-primary mt-3">Guardar Gasto</button>
     <script>
-        // Convertir el array de productos a JSON y pasarlo a JavaScript
-        const productos = <?php echo json_encode($productosArray); ?>;
+    function actualizarPrecio(index) {
+        const productoSelect = document.getElementById('producto_' + index);
+        const cantidadInput = document.getElementById('cantidad_' + index);
+        const precioInput = document.getElementById('precio_' + index);
 
-        // Función para agregar un producto al formulario
-        function agregarProducto(index) {
-            const productItem = document.createElement('div');
-            productItem.classList.add('producto-item');
+        const selectedOption = productoSelect.options[productoSelect.selectedIndex];
+        const precioUnitario = parseFloat(selectedOption.getAttribute('data-precio')) || 0;
+        const cantidad = parseInt(cantidadInput.value) || 0;
 
-            // Crear las opciones para el select de productos
-            let options = '<option value="">Seleccione un Producto</option>';
-            productos.forEach(producto => {
-                options += `<option value="${producto.id}" data-precio="${producto.Costo}" data-nombre="${producto.Nombre}">${producto.Nombre} - $${parseFloat(producto.Costo).toFixed(2)}</option>`;
-            });
+        const precioTotal = precioUnitario * cantidad;
 
-            productItem.innerHTML = `
-                <select name="productos[${index}]" class="form-control" id="producto_${index}" required onchange="actualizarPrecio(${index})">
-                    ${options}
-                </select>
-                <input type="number" name="cantidad[${index}]" class="form-control mt-2" id="cantidad_${index}" placeholder="Cantidad" min="1" required oninput="actualizarPrecio(${index})">
-                <input type="text" name="precio[${index}]" class="form-control mt-2" id="precio_${index}" placeholder="Precio" readonly>
-            `;
-            document.getElementById('productos-container').appendChild(productItem);
+        if (precioTotal > 0) {
+            precioInput.value = '$' + precioTotal.toFixed(2);
+        } else {
+            precioInput.value = '';
         }
+        actualizarTotal();
+    }
 
-        // Función para actualizar el precio total del producto
-        function actualizarPrecio(index) {
-            const productoSelect = document.getElementById('producto_' + index);
-            const cantidadInput = document.getElementById('cantidad_' + index);
-            const precioInput = document.getElementById('precio_' + index);
+    function actualizarTotal() {
+        let total = 0;
 
-            const selectedOption = productoSelect.options[productoSelect.selectedIndex];
-            const costoUnitario = parseFloat(selectedOption.getAttribute('data-precio')); // Usamos el costo
-            const cantidad = parseInt(cantidadInput.value) || 0;
-
-            const precioTotal = costoUnitario * cantidad;
-
-            if (precioTotal > 0) {
-                precioInput.value = '$' + precioTotal.toFixed(2);
-            } else {
-                precioInput.value = '';
-            }
-        }
-
-        // Agregar el primer producto al cargar la página
-        document.addEventListener('DOMContentLoaded', function () {
-            agregarProducto(1);
+        // Sumamos el total de todos los productos
+        document.querySelectorAll('.producto-item').forEach(function(item) {
+            const precioInput = item.querySelector('input[name^="precio"]');
+            const precio = parseFloat(precioInput.value.replace('$', '')) || 0;
+            total += precio;
         });
 
-        let productCount = 1;
+        // Mostrar el total en la interfaz
+        document.getElementById('total').innerText = '$' + total.toFixed(2);
+    }
 
-        // Agregar más productos al hacer clic en el botón
-        document.getElementById('agregar-producto').addEventListener('click', function () {
-            productCount++;
-            agregarProducto(productCount);
+    document.addEventListener('DOMContentLoaded', function() {
+        const cantidadInputs = document.querySelectorAll('input[name^="cantidad"]');
+        cantidadInputs.forEach(function(input) {
+            const index = input.name.match(/\d+/)[0];
+            actualizarPrecio(index);  // Actualizamos el precio de cada producto al cargar la página
         });
-    </script>
+    });
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    let productCount = 1;
+
+    document.getElementById('agregar-producto').addEventListener('click', function() {
+        productCount++;
+        const productItem = document.createElement('div');
+        productItem.classList.add('producto-item');
+        productItem.innerHTML = `
+            <select name="productos[${productCount}]" class="form-control" id="producto_${productCount}" required onchange="actualizarPrecio(${productCount})">
+                <option value="">Seleccione un Producto</option>
+                <?php foreach($productosArray as $producto): ?>
+                    <option value="<?php echo $producto['id']; ?>" data-precio="<?php echo $producto['Costo']; ?>">
+                        <?php echo $producto['Nombre']; ?> - $<?php echo number_format($producto['Costo'], 2); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <input type="number" name="cantidad[${productCount}]" class="form-control mt-2" id="cantidad_${productCount}" placeholder="Cantidad" min="1" required oninput="actualizarPrecio(${productCount})">
+            <input type="text" name="precio[${productCount}]" class="form-control mt-2" id="precio_${productCount}" placeholder="Precio" readonly>
+        `;
+        document.getElementById('productos-container').appendChild(productItem);
+        actualizarTotal();
+    });
+</script>
+</form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
 </body>
 </html>

@@ -65,6 +65,9 @@ padding: 70px;
             <a href="nuevo_ingreso.php" class="btn btn-success mb-3">
             <strong>+ INGRESO</strong>
         </a>
+        <a id="exportExcelBtn" class="btn btn-success mb-3" href="exportar_ingresos_excel.php">Exportar a Excel</a>
+
+
 
         <!-- Formulario de filtro -->
         <form method="POST">

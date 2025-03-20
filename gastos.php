@@ -198,6 +198,19 @@ $total_paginas = ceil($total_gastos / $gastos_por_pagina);
             </ul>
         </nav>
     </div>
+    <script>
+    // Función para mostrar/ocultar el formulario
+    function toggleImportarForm() {
+        var form = document.getElementById("importarForm");
+        
+        // Verifica si el formulario está visible, y alterna su estado
+        if (form.style.display === "none" || form.style.display === "") {
+            form.style.display = "block";  // Muestra el formulario
+        } else {
+            form.style.display = "none";   // Oculta el formulario
+        }
+    }
+</script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>

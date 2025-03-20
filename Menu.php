@@ -26,7 +26,33 @@ function obtenerIngresosPorEstado($conn) {
     return $ingresos_por_estado;
 }
 
-// Obtener los ingresos del mes actual y el mes anterior
+// Función para obtener las compras a cobrar
+function obtenerComprasACobrar($conn) {
+    $query = "SELECT SUM(total) AS total_compras_a_cobrar FROM compras WHERE estado = 'pendiente'"; // La columna 'estado' está en la tabla 'compras'
+    $result = $conn->query($query);
+    
+    if ($result === false) {
+        die('Error en la consulta SQL: ' . $conn->error);
+    }
+
+    $row = $result->fetch_assoc();
+    return $row['total_compras_a_cobrar'] ? $row['total_compras_a_cobrar'] : 0;
+}
+
+// Función para obtener los gastos a pagar
+function obtenerGastosAPagar($conn) {
+    $query = "SELECT SUM(total) AS total_gastos_a_pagar FROM gastos WHERE estado = 'pendiente'"; // La columna 'estado' está en la tabla 'gastos'
+    $result = $conn->query($query);
+    
+    if ($result === false) {
+        die('Error en la consulta SQL: ' . $conn->error);
+    }
+
+    $row = $result->fetch_assoc();
+    return $row['total_gastos_a_pagar'] ? $row['total_gastos_a_pagar'] : 0;
+}
+
+// Obtener las fechas del mes actual y el mes anterior
 $fecha_actual = date('Y-m-d');
 $fecha_mes_anterior = date('Y-m-d', strtotime('-1 month', strtotime($fecha_actual)));
 
@@ -36,6 +62,7 @@ $fin_mes_actual = date('Y-m-t', strtotime($fecha_actual));
 $inicio_mes_anterior = date('Y-m-01', strtotime($fecha_mes_anterior));
 $fin_mes_anterior = date('Y-m-t', strtotime($fecha_mes_anterior));
 
+// Obtener ingresos del mes actual y el mes anterior
 $ingresos_mes_actual = obtenerIngresosPorMes($conn, $inicio_mes_actual, $fin_mes_actual);
 $ingresos_mes_anterior = obtenerIngresosPorMes($conn, $inicio_mes_anterior, $fin_mes_anterior);
 
@@ -47,6 +74,10 @@ if ($ingresos_mes_anterior > 0) {
 
 // Obtener ingresos por estado
 $ingresos_estado = obtenerIngresosPorEstado($conn);
+
+// Obtener compras a cobrar y gastos a pagar
+$compras_a_cobrar = obtenerComprasACobrar($conn);
+$gastos_a_pagar = obtenerGastosAPagar($conn);
 ?>
 
 <!DOCTYPE html>
@@ -54,14 +85,14 @@ $ingresos_estado = obtenerIngresosPorEstado($conn);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Ingresos</title>
+    <title>Dashboard - Ingresos y Finanzas</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; }
-        .container { margin-top: 60px ;width:980px;margin-left:320px;  }
+        .container { margin-top: 60px; width: 980px; margin-left: 320px; }
         .card { padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
-        .canvas-container { width:400px; height: 400px; margin: auto; }
+        .canvas-container { width: 400px; height: 400px; margin: auto; }
     </style>
 </head>
 <body>
@@ -71,35 +102,31 @@ $ingresos_estado = obtenerIngresosPorEstado($conn);
     </header>
 
     <div class="container">
-        <h2 class="text-center">Dashboard de Ingresos</h2>
+        <h2 class="text-center">Dashboard de Ingresos y Finanzas</h2>
 
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-3">
                 <div class="card text-center">
                     <h4>Ingresos del Mes Actual</h4>
                     <h3>$<?php echo number_format($ingresos_mes_actual, 2); ?></h3>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-3">
                 <div class="card text-center">
                     <h4>Ingresos del Mes Anterior</h4>
                     <h3>$<?php echo number_format($ingresos_mes_anterior, 2); ?></h3>
                 </div>
             </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-12 text-center">
-                <div class="alert alert-info">
-                    <?php
-                    if ($porcentaje_cambio > 0) {
-                        echo "Los ingresos han aumentado un {$porcentaje_cambio}% respecto al mes anterior.";
-                    } elseif ($porcentaje_cambio < 0) {
-                        echo "Los ingresos han disminuido un " . abs($porcentaje_cambio) . "% respecto al mes anterior.";
-                    } else {
-                        echo "Los ingresos se han mantenido estables.";
-                    }
-                    ?>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <h4>Compras a Cobrar</h4>
+                    <h3>$<?php echo number_format($compras_a_cobrar, 2); ?></h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <h4>Gastos a Pagar</h4>
+                    <h3>$<?php echo number_format($gastos_a_pagar, 2); ?></h3>
                 </div>
             </div>
         </div>
@@ -118,10 +145,25 @@ $ingresos_estado = obtenerIngresosPorEstado($conn);
                 </div>
             </div>
         </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <h5 class="text-center">Comparación de Gastos</h5>
+                    <canvas id="graficoGastos"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <h5 class="text-center">Compras a Cobrar</h5>
+                    <canvas id="graficoCompras"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Gráfico de barras
+        // Gráfico de barras para los ingresos
         var ctxBarra = document.getElementById('graficoBarra').getContext('2d');
         new Chart(ctxBarra, {
             type: 'bar',
@@ -141,7 +183,7 @@ $ingresos_estado = obtenerIngresosPorEstado($conn);
             }
         });
 
-        // Gráfico de dona
+        // Gráfico de dona para ingresos por estado
         var ctxDona = document.getElementById('graficoDona').getContext('2d');
         new Chart(ctxDona, {
             type: 'doughnut',
@@ -154,6 +196,46 @@ $ingresos_estado = obtenerIngresosPorEstado($conn);
                 }]
             },
             options: { responsive: true }
+        });
+
+        // Gráfico de barras para comparar gastos a pagar y compras a cobrar
+        var ctxGastos = document.getElementById('graficoGastos').getContext('2d');
+        new Chart(ctxGastos, {
+            type: 'bar',
+            data: {
+                labels: ['Gastos a Pagar', 'Compras a Cobrar'],
+                datasets: [{
+                    label: 'Total',
+                    data: [<?php echo $gastos_a_pagar; ?>, <?php echo $compras_a_cobrar; ?>],
+                    backgroundColor: ['#FF5733', '#33FF57'],
+                    borderColor: ['#C70039', '#00FF00'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // Gráfico de barras para las compras a cobrar
+        var ctxCompras = document.getElementById('graficoCompras').getContext('2d');
+        new Chart(ctxCompras, {
+            type: 'bar',
+            data: {
+                labels: ['Compras a Cobrar'],
+                datasets: [{
+                    label: 'Total Compras a Cobrar',
+                    data: [<?php echo $compras_a_cobrar; ?>],
+                    backgroundColor: ['#33FF57'],
+                    borderColor: ['#00FF00'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true } }
+            }
         });
     </script>
 

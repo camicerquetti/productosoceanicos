@@ -71,6 +71,7 @@ $usuarios = $usuario->obtenerTodosUsuarios();
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>usuario</th>
                             <th>Nombre</th>
                             <th>Apellido</th>
                             <th>Email</th>
@@ -87,6 +88,7 @@ $usuarios = $usuario->obtenerTodosUsuarios();
                             foreach ($usuarios as $row) {
                                 echo "<tr>
                                         <td>{$row['id']}</td>
+                                          <td>{$row['usuario']}</td>
                                         <td>{$row['nombre']}</td>
                                         <td>{$row['apellido']}</td>
                                         <td>{$row['email']}</td>

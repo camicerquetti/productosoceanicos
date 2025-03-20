@@ -8,20 +8,37 @@ class Ingreso {
         $this->conn = $conn;
     }
 
-    public function insertarIngreso($fecha, $vencimiento, $tipo_ingreso, $descripcion, $monto, $estado, $metodo_pago, $empleado_responsable, $metodo_transporte, $subtotal, $iva, $total, $proveedor, $tipo_factura, $cliente) {
+    public function insertarIngreso(
+        $fecha, 
+        $vencimiento, 
+        $tipo_ingreso, 
+        $descripcion, 
+        $monto, 
+        $estado, 
+        $metodo_pago, 
+        $empleado_responsable, 
+        $metodo_transporte, 
+        $subtotal, 
+        $iva, 
+        $total, 
+        $proveedor, // Ahora este parámetro es el nombre del proveedor
+        $tipo_factura, 
+        $cliente, // Ahora este parámetro es el nombre del cliente
+        $productos_json
+    ) {
         // Consulta SQL
-        $query = "INSERT INTO ingresos (fecha, vencimiento, tipo_ingreso, descripcion, monto, estado, empleado_responsable, metodo_pago, metodo_transporte, subtotal, iva, total, proveedor, tipo_factura, cliente) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
+        $query = "INSERT INTO ingresos (fecha, vencimiento, tipo_ingreso, descripcion, monto, estado, empleado_responsable, metodo_pago, metodo_transporte, subtotal, iva, total, proveedor, tipo_factura, cliente, producto) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    
         // Preparamos la consulta
         $stmt = $this->conn->prepare($query);
-        
+    
         if ($stmt === false) {
             throw new Exception("Error en la preparación de la consulta: " . $this->conn->error);
         }
-        
+    
         // Vinculamos los parámetros
-        if (!$stmt->bind_param("ssssdsdssdddiii", 
+        if (!$stmt->bind_param("ssssddssdddsdss", 
             $fecha, 
             $vencimiento, 
             $tipo_ingreso, 
@@ -34,13 +51,14 @@ class Ingreso {
             $subtotal,      // double
             $iva,           // double
             $total,         // double
-            $proveedor,     // int
-            $tipo_factura,  // int
-            $cliente        // int
+            $proveedor,  // Nombre del proveedor (varchar)
+            $tipo_factura,  // tipo de factura (varchar)
+            $cliente,    // Nombre del cliente (varchar)
+            $productos_json // JSON de productos (varchar o text)
         )) {
             throw new Exception("Error al enlazar parámetros: " . $stmt->error);
         }
-        
+    
         // Ejecutamos la consulta
         if (!$stmt->execute()) {
             throw new Exception("Error al ejecutar la consulta: " . $stmt->error);
@@ -48,7 +66,6 @@ class Ingreso {
     
         return true;
     }
-    
     
 
     // Función para verificar y actualizar el estado de las facturas a "vencida"

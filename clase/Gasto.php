@@ -8,20 +8,47 @@ class Gasto {
     }
 
     // Método para insertar un gasto en la base de datos
-    public function insertarGasto($fecha, $descripcion, $categoria, $metodo_pago, $monto, $estado) {
-        $query = "INSERT INTO gastos (fecha, descripcion, categoria, metodo_pago, monto, estado)
-                  VALUES (?, ?, ?, ?, ?, ?)";
+    public function insertarGasto($fecha, $proveedor, $estado, $metodo_pago, $categoria, $descripcion, $subtotal, $iva, $total, $productos_seleccionados) {
+        // Insertar el gasto en la tabla "gastos"
+        $query = "INSERT INTO gastos (fecha, proveedor, estado, metodo_pago, categoria, descripcion, subtotal, iva, total) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    
+        // Preparar la consulta
         $stmt = $this->conn->prepare($query);
-        $stmt->bind_param("ssssds", $fecha, $descripcion, $categoria, $metodo_pago, $monto, $estado);
-
-        // Ejecutar la consulta y verificar si fue exitosa
+        if (!$stmt) {
+            die("Error en la consulta: " . $this->conn->error);
+        }
+    
+        // Asociar parámetros
+        $stmt->bind_param("sisssssdd", $fecha, $proveedor, $estado, $metodo_pago, $categoria, $descripcion, $subtotal, $iva, $total);
+    
+        // Ejecutar la consulta
         if ($stmt->execute()) {
+            // Obtener el ID del gasto insertado
+            $gasto_id = $stmt->insert_id;
+    
+            // Insertar los productos relacionados
+            foreach ($productos_seleccionados as $producto) {
+                $query_producto = "INSERT INTO gasto_productos (gasto_id, producto, cantidad, precio, monto) 
+                                   VALUES (?, ?, ?, ?, ?)";
+                $stmt_producto = $this->conn->prepare($query_producto);
+                if (!$stmt_producto) {
+                    die("Error en la consulta de productos: " . $this->conn->error);
+                }
+    
+                $stmt_producto->bind_param("isidd", $gasto_id, $producto['producto'], $producto['cantidad'], $producto['precio'], $producto['total']);
+                $stmt_producto->execute();
+            }
+    
+            $stmt->close();
             return true;
         } else {
+            die("Error al insertar gasto: " . $stmt->error);
             return false;
         }
     }
-
+    
+    
     // Método para obtener todos los gastos con filtros y paginación
     public function obtenerGastos($filtro, $limit, $offset) {
         $query = "SELECT * FROM gastos WHERE 

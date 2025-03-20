@@ -154,8 +154,12 @@ $total_paginas = ceil($total_clientes / $clientes_por_pagina);
             <button type="submit" class="btn btn-primary mt-2">Filtrar</button>
         </form>
         <button class="btn btn-success" onclick="window.location.href='nuevo-cliente.php'">+ Cliente</button>
+        <a id="exportExcelBtn" class="btn btn-success" href="exportar_clientes_excel.php">Exportar a Excel</a>
+
+       
         <!-- Botón verde para mostrar el formulario de importación -->
         <button class="btn btn-success" onclick="toggleImportarForm()">Importar Cliente</button>
+        
 
         <!-- Formulario de importación de clientes -->
         <div id="importarForm" class="mt-3">
@@ -168,6 +172,7 @@ $total_paginas = ceil($total_clientes / $clientes_por_pagina);
                 <button type="submit" class="btn btn-primary">Subir CSV</button>
             </form>
         </div>
+        
 
         <!-- Tabla de clientes -->
         <table class="table mt-4">
@@ -230,6 +235,19 @@ $total_paginas = ceil($total_clientes / $clientes_por_pagina);
     </ul>
 </nav>
 
+<script>
+    // Función para mostrar/ocultar el formulario
+    function toggleImportarForm() {
+        var form = document.getElementById("importarForm");
+        
+        // Verifica si el formulario está visible, y alterna su estado
+        if (form.style.display === "none" || form.style.display === "") {
+            form.style.display = "block";  // Muestra el formulario
+        } else {
+            form.style.display = "none";   // Oculta el formulario
+        }
+    }
+</script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
