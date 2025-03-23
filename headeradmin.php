@@ -203,6 +203,16 @@ $usuario->obtenerDatos(); // Llama a un método para obtener los datos del usuar
             <a class="nav-link " href="Menu.php" id="" role="button" data-bs-toggle="" aria-expanded="false">
         Menu
     </a>
+    <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        MenuX
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+        <li><a class="dropdown-item" href="ingresosx.php">IngresosX</a></li>
+        <li><a class="dropdown-item" href="comprasx.php">ComprasX</a></li>
+        <li><a class="dropdown-item" href="gastosx.php">GastosX</a></li>
+    </ul>
+</li>
     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownIngresos" role="button" data-bs-toggle="dropdown" aria-expanded="false">
         Ingresos
     </a>
@@ -251,6 +261,7 @@ $usuario->obtenerDatos(); // Llama a un método para obtener los datos del usuar
                 <a class="nav-link" href="usuarios.php">Usuarios</a>
             </li>
         </ul>
+       
 
 
     <!-- Contenido principal de la página -->

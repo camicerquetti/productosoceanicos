@@ -199,20 +199,29 @@ $usuario->obtenerDatos(); // Llama a un método para obtener los datos del usuar
         <!-- Menú de navegación -->
         <ul class="navbar-nav">
         <li class="nav-item">
-                <a class="nav-link active" href="menuVentas.php">Home</a>
+                <a class="nav-link" href="menuVentas.php">Home</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link active" href="menu.php">Informe de ventas</a>
+                <a class="nav-link " href="ventasusers.php">Informe de ventas</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="base_datos.php">Deuda de clientes</a>
+                <a class="nav-link" href="deudaclientes.php">Deuda de clientes</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="ingresos.php">Ingresos</a>
+                <a class="nav-link" href="otros_ingresos_ventas.php">Otros ingresos</a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" href="egresos.php">Egresos</a>
-            </li>
+          <!-- Egresos con submenú -->
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarEgresos" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Egresos
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarEgresos">
+                <li><a class="dropdown-item" href="comprasventas.php">Compras</a></li>
+                <li><a class="dropdown-item" href="gastosventas.php">Gastos</a></li>
+            </ul>
+        </li>
+    </ul>
+</div>
             
         </ul>
 

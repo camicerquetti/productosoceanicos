@@ -207,7 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <header>
-        <?php include('headeradmin.php'); ?>
+        <?php include('headerventas.php'); ?>
     </header>
 
     <div class="container mt-4">

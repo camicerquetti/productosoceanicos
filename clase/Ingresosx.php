@@ -1,6 +1,6 @@
 <?php
 
-class Ingreso {
+class Ingreso{
     private $conn;
 
     // Constructor con la conexión
@@ -21,14 +21,14 @@ class Ingreso {
         $subtotal, 
         $iva, 
         $total, 
-        $proveedor, // Ahora este parámetro es el nombre del proveedor
+        $proveedor, 
         $tipo_factura, 
-        $cliente, // Ahora este parámetro es el nombre del cliente
-        $id_cuenta,
+        $cliente, 
+       
         $productos_json
     ) {
-        // Consulta SQL
-        $query = "INSERT INTO ingresos (fecha, vencimiento, tipo_ingreso, descripcion, monto, estado, empleado_responsable, metodo_pago, metodo_transporte, subtotal, iva, total, proveedor, tipo_factura, cliente,id_cuenta, producto) 
+        // Consulta SQL para la tabla ingresosx
+        $query = "INSERT INTO ingresosx (fecha, vencimiento, tipo_ingreso, descripcion, monto, estado, empleado_responsable, metodo_pago, metodo_transporte, subtotal, iva, total, proveedor, tipo_factura, cliente, producto) 
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
         // Preparamos la consulta
@@ -39,7 +39,7 @@ class Ingreso {
         }
     
         // Vinculamos los parámetros
-        if (!$stmt->bind_param("ssssddssdddsdss", 
+        if (!$stmt->bind_param("ssssddssdddsds", 
             $fecha, 
             $vencimiento, 
             $tipo_ingreso, 
@@ -55,7 +55,7 @@ class Ingreso {
             $proveedor,  // Nombre del proveedor (varchar)
             $tipo_factura,  // tipo de factura (varchar)
             $cliente,    // Nombre del cliente (varchar)
-            $id_cuenta,    // Nombre del cliente (varchar)
+
             $productos_json // JSON de productos (varchar o text)
         )) {
             throw new Exception("Error al enlazar parámetros: " . $stmt->error);
@@ -72,14 +72,14 @@ class Ingreso {
 
     // Función para verificar y actualizar el estado de las facturas a "vencida"
     public function actualizarEstadoVencido() {
-        $query = "UPDATE ingresos SET estado = 'vencida' WHERE estado = 'pendiente' AND TIMESTAMPDIFF(HOUR, fecha, NOW()) > 24";
+        $query = "UPDATE ingresosx SET estado = 'vencida' WHERE estado = 'pendiente' AND TIMESTAMPDIFF(HOUR, fecha, NOW()) > 24";
         $stmt = $this->conn->prepare($query);
         return $stmt->execute();
     }
 
     // Obtener ingresos con filtro (puede ser por cliente, tipo, etc.)
     public function obtenerIngresos($filtro = '%%', $limit = 10, $offset = 0) {
-        $query = "SELECT * FROM ingresos WHERE tipo_ingreso LIKE ? LIMIT ? OFFSET ?";
+        $query = "SELECT * FROM ingresosx WHERE tipo_ingreso LIKE ? LIMIT ? OFFSET ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param("sii", $filtro, $limit, $offset);
         $stmt->execute();
@@ -88,7 +88,7 @@ class Ingreso {
 
     // Contar el total de ingresos para la paginación
     public function contarIngresos($filtro = '%%') {
-        $query = "SELECT COUNT(*) as total FROM ingresos WHERE tipo_ingreso LIKE ?";
+        $query = "SELECT COUNT(*) as total FROM ingresosx WHERE tipo_ingreso LIKE ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bind_param("s", $filtro);
         $stmt->execute();
@@ -100,10 +100,11 @@ class Ingreso {
     public function generarFacturaPDF($id) {
         // Aquí se implementará la generación del PDF de la factura (con FPDF o TCPDF)
     }
-      // Método para obtener ingresos filtrados por tipo (venta) y estado
-      public function obtenerIngresosVentas($filtro, $estado_filtro, $limit, $offset) {
+    
+    // Método para obtener ingresos filtrados por tipo (venta) y estado
+    public function obtenerIngresosVentas($filtro, $estado_filtro, $limit, $offset) {
         // Crear la consulta SQL
-        $sql = "SELECT * FROM ingresos 
+        $sql = "SELECT * FROM ingresosx 
                 WHERE tipo_ingreso = 'venta' 
                 AND (estado LIKE ? OR ? = '%%') 
                 AND (descripcion LIKE ? OR cliente LIKE ?) 
@@ -129,7 +130,7 @@ class Ingreso {
    
     // Método para contar los ingresos filtrados por tipo (venta) y estado
     public function contarIngresosVentas($filtro, $estado_filtro) {
-        $sql = "SELECT COUNT(*) FROM ingresos 
+        $sql = "SELECT COUNT(*) FROM ingresosx 
                 WHERE tipo_ingreso = 'venta' 
                 AND (estado LIKE ? OR ? = '%%') 
                 AND (descripcion LIKE ? OR cliente LIKE ?)";
@@ -142,19 +143,20 @@ class Ingreso {
         $stmt->execute();
         
         // Obtener el resultado
+        $stmt->get_result();
         $result = $stmt->get_result();
         $row = $result->fetch_row();
         
         // Retornar el número total de registros
         return $row[0];
     }
+
     public function obtenerIngresoPorId($id) {
         // Consulta principal para obtener los detalles del ingreso
-        
-        $sql = "SELECT ingresos.*, clientes.cuit, clientes.razon_social, clientes.condicion_iva, ingresos.empleado_responsable
-        FROM ingresos 
-        LEFT JOIN clientes ON ingresos.cliente = clientes.id
-        WHERE ingresos.id = ?";
+        $sql = "SELECT ingresosx.*, clientes.cuit, clientes.razon_social, clientes.condicion_iva, ingresosx.empleado_responsable
+        FROM ingresosx 
+        LEFT JOIN clientes ON ingresosx.cliente = clientes.id
+        WHERE ingresosx.id = ?";
 
         $stmt = $this->conn->prepare($sql);
         
@@ -174,9 +176,9 @@ class Ingreso {
         // Obtener productos asociados a la factura
         $sql_productos = "SELECT p.Codigo, p.Nombre, i.cantidad, i.precio, i.iva, 
         (i.cantidad * i.precio) as subtotal
- FROM ingreso_productos i
- INNER JOIN producto p ON i.producto_id = p.id
- WHERE i.ingreso_id = ?";
+        FROM ingreso_productos i
+        INNER JOIN producto p ON i.producto_id = p.id
+        WHERE i.ingreso_id = ?";
 
         $stmt_prod = $this->conn->prepare($sql_productos);
         
@@ -196,48 +198,5 @@ class Ingreso {
     
         return $ingreso;
     }
- public function insertarCompra($emision, $proveedor, $estado, $metodo_pago, $categoria_pago, $descripcion, $subtotal, $iva, $total, $productos_seleccionados) {
-    // Preparar la consulta para insertar la compra
-    $stmt = $this->conn->prepare("INSERT INTO compras (emision, proveedor, estado, metodo_pago, categoria_pago, descripcion, subtotal, iva, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    
-    if (!$stmt) {
-        // Si la preparación de la consulta falla, mostrar el error de SQL
-        echo "Error al preparar la consulta: " . $this->conn->error;
-        return false; // Detenemos la ejecución si hay un error en la preparación
-    }
-
-    // Enlazar los parámetros
-    $stmt->bind_param("ssssssddd", $emision, $proveedor, $estado, $metodo_pago, $categoria_pago, $descripcion, $subtotal, $iva, $total);
-
-    // Ejecutar la consulta
-    if ($stmt->execute()) {
-        $compra_id = $stmt->insert_id;
-
-        // Ahora insertamos los productos asociados
-        foreach ($productos_seleccionados as $producto) {
-            // Preparar la consulta para insertar los productos
-            $stmt_producto = $this->conn->prepare("INSERT INTO compras_productos (compra_id, producto, cantidad, precio, total) VALUES (?, ?, ?, ?, ?)");
-
-            if (!$stmt_producto) {
-                // Si la preparación de la consulta para los productos falla
-                echo "Error al preparar la consulta para productos: " . $this->conn->error;
-                return false; // Detenemos la ejecución si hay un error
-            }
-
-            // Enlazar los parámetros para los productos
-            $stmt_producto->bind_param("isidd", $compra_id, $producto['producto'], $producto['cantidad'], $producto['precio'], $producto['total']);
-
-            // Ejecutar la consulta para insertar los productos
-            $stmt_producto->execute();
-        }
-
-        return true; // Si todo se insertó correctamente, retornamos true
-    } else {
-        // Si la ejecución de la consulta para la compra falla
-        echo "Error al ejecutar la consulta: " . $stmt->error;
-        return false; // Detenemos la ejecución
-    }
-}
-
 }
 ?>

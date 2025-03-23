@@ -1,10 +1,10 @@
 <?php
 ob_start();
 include('config.php');
-include('clase/Ingreso.php');
+include('clase/Ingresosx.php');
 
 // Obtener lista de productos, clientes, empleados y proveedores
-$cuentas = $conn->query("SELECT Id_cuenta, Cuenta FROM cuentas");
+
 $productos = $conn->query("SELECT * FROM producto");
 $clientes = $conn->query("SELECT * FROM clientes");
 $empleados = $conn->query("SELECT * FROM usuarios WHERE rol IN ('usuario', 'empleado')");
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $metodo_transporte = $_POST['metodo_transporte'];
     $proveedor = $_POST['proveedor'];
     $tipo_factura = $_POST['tipo_factura'];
-    $cuenta = $_POST['cuenta']; // Cambiado de 'id_cuenta' a 'cuenta'
+
 
     // Verificar si hay productos seleccionados
     if (!empty($_POST['productos']) && is_array($_POST['productos'])) {
@@ -79,12 +79,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $monto = $total;
 
     // Insertar el ingreso en la base de datos
-    $sql = "INSERT INTO ingresos (fecha, vencimiento, tipo_ingreso, descripcion, monto, estado, empleado_responsable, metodo_pago, metodo_transporte, proveedor, tipo_factura, subtotal, iva, total, cliente, id_cuenta) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $sql = "INSERT INTO ingresosx (fecha, vencimiento, tipo_ingreso, descripcion, monto, estado, empleado_responsable, metodo_pago, metodo_transporte, proveedor, tipo_factura, subtotal, iva, total, cliente) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     if ($stmt = $conn->prepare($sql)) {
         $stmt->bind_param(
-            "sssssssssssdddsd",  // 16 parámetros ahora
+            "sssssssssssddsd",  // 16 parámetros ahora
             $fecha, 
             $vencimiento, 
             $tipo_ingreso, 
@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $iva, 
             $total, 
             $cliente, 
-            $cuenta // Usamos 'cuenta' en lugar de 'id_cuenta'
+         
         );
         
 
@@ -211,7 +211,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </header>
 
     <div class="container mt-4">
-        <h2>Nuevo Ingreso</h2>
+        <h2>Nuevo Ingreso X</h2>
 
         <form method="POST">
             <!-- Fecha y Vencimiento -->
@@ -311,28 +311,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="mb-3">
                 <label for="tipo_factura" class="form-label">Tipo de Factura</label>
                 <select name="tipo_factura" class="form-control" required>
-                    <option value="A">Factura A</option>
-                    <option value="B">Factura B</option>
-                    <option value="C">Factura C</option>
+                    <option value="A">Factura X</option>
+                   
                 </select>
             </div>
-            <div class="mb-3">
-    <label for="cuenta" class="form-label">Cuenta</label>
-    <select name="cuenta" class="form-control" required>
-        <?php
-        // Consulta para obtener las cuentas desde la tabla "cuentas"
-        $query_cuentas = "SELECT Id_cuenta, Cuenta FROM cuentas";
-        $resultado_cuentas = $conn->query($query_cuentas);
-
-        // Mostrar las cuentas en el select
-        while ($cuenta = $resultado_cuentas->fetch_assoc()) :
-        ?>
-            <option value="<?php echo $cuenta['Id_cuenta']; ?>">
-                <?php echo $cuenta['Cuenta']; ?>
-            </option>
-        <?php endwhile; ?>
-    </select>
-</div>
+     
 
 
 
