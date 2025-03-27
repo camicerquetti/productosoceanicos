@@ -7,22 +7,36 @@ class Compra {
         $this->conn = $conn;
     }
 
-  // Método para insertar una compra
-  public function insertarCompra($fecha, $proveedor, $estado, $metodo_pago, $categoria_pago, $descripcion, $subtotal, $iva, $total, $productos_seleccionados, $vendedor) {
-    // Convertir los productos seleccionados en un array asociativo y luego en formato JSON
-    $productos_json = json_encode($productos_seleccionados);
-
-    // 1. Insertar la compra en la tabla 'compras' con los productos en formato JSON
-    $query = "INSERT INTO compras (emision, proveedor, categoria, subtotal, descuento, cantidad, total, vencimientoPago, tipoCompra, producto, precio, iva, notaInterna, contador, estado, vendedor, productos)
-    VALUES ('$fecha', '$proveedor', '$categoria_pago', '$subtotal', 0, 0, '$total', NULL, '$metodo_pago', '$descripcion', '$precio_unitario', '$iva', '$descripcion', '$vendedor', '$estado', '$vendedor', '$productos_json')";
-
-    if ($this->conn->query($query) === TRUE) {
-        echo "Compra insertada correctamente.";
-    } else {
-        echo "Error al insertar la compra: " . $this->conn->error;
+    public function insertarCompra($fecha, $proveedor, $estado, $metodo_pago, $categoria_pago, $descripcion, $subtotal, $iva, $total, $productos_seleccionados, $vendedor) {
+        // 1. Insertar la compra principal en la tabla 'compras'
+        $query_compra = "INSERT INTO compras (emision, proveedor, categoria, subtotal, descuento, cantidad, total, vencimientoPago, tipoCompra, producto, precio, iva, notaInterna, contador, estado, vendedor)
+                         VALUES ('$fecha', '$proveedor', '$categoria_pago', '$subtotal', 0, 0, '$total', NULL, '$metodo_pago', '$descripcion', '$precio_unitario', '$iva', '$descripcion', '$vendedor', '$estado', '$vendedor')";
+    
+        if ($this->conn->query($query_compra) === TRUE) {
+            // Obtener el ID de la compra recién insertada
+            $compra_id = $this->conn->insert_id;
+            
+            // 2. Insertar los productos en la tabla 'detalle_compra'
+            foreach ($productos_seleccionados as $producto) {
+                $producto_id = $producto['producto_id']; // ID del producto
+                $cantidad = $producto['cantidad']; // Cantidad
+                $precio_total = $producto['total']; // Precio total por producto
+    
+                // Inserción en la tabla detalle_compra
+                $query_detalle = "INSERT INTO detalle_compra (compra_id, producto_id, cantidad, precio_total)
+                                  VALUES ('$compra_id', '$producto_id', '$cantidad', '$precio_total')";
+    
+                if (!$this->conn->query($query_detalle)) {
+                    echo "Error al insertar detalle del producto: " . $this->conn->error;
+                }
+            }
+    
+            echo "Compra insertada correctamente.";
+        } else {
+            echo "Error al insertar la compra: " . $this->conn->error;
+        }
     }
-}
-
+    
 
 // Método para obtener las compras con paginación
 public function obtenerCompras($filtro, $limit, $offset) {

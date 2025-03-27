@@ -46,14 +46,14 @@ if (isset($_GET['id'])) {
     <p>www.productooceanico.com.ar</p>
     <hr>
     
-    <h2>Factura <span style="font-size: 30px; font-weight: bold;"> <?php echo $detalle_ingreso['tipo_factura']; ?> </span></h2>
-    <p>Fecha de Emisión: <?php echo $detalle_ingreso['fecha']; ?></p>
-    <p>Factura AFIP: <?php echo $detalle_ingreso['factura_afip']; ?></p>
-    <p>Estado: <?php echo $detalle_ingreso['estado']; ?></p>
-    <p>Razón Social: <?php echo $detalle_ingreso['razon_social']; ?></p>
-    <p>CUIT: <?php echo $detalle_ingreso['cuit']; ?></p>
-    <p>Condición IVA: <?php echo $detalle_ingreso['condicion_iva']; ?></p>
-    <p>Vendedor: <?php echo $detalle_ingreso['empleado_responsable']; ?></p>
+    <h2>Factura <span style="font-size: 30px; font-weight: bold;"> <?php echo isset($detalle_ingreso['tipo_factura']) ? $detalle_ingreso['tipo_factura'] : 'No disponible'; ?> </span></h2>
+    <p>Fecha de Emisión: <?php echo isset($detalle_ingreso['fecha']) ? $detalle_ingreso['fecha'] : 'No disponible'; ?></p>
+    <p>Factura AFIP: <?php echo isset($detalle_ingreso['factura_afip']) ? $detalle_ingreso['factura_afip'] : 'No disponible'; ?></p>
+    <p>Estado: <?php echo isset($detalle_ingreso['estado']) ? $detalle_ingreso['estado'] : 'No disponible'; ?></p>
+    <p>Razón Social: <?php echo isset($detalle_ingreso['razon_social']) ? $detalle_ingreso['razon_social'] : 'No disponible'; ?></p>
+    <p>CUIT: <?php echo isset($detalle_ingreso['cuit']) ? $detalle_ingreso['cuit'] : 'No disponible'; ?></p>
+    <p>Condición IVA: <?php echo isset($detalle_ingreso['condicion_iva']) ? $detalle_ingreso['condicion_iva'] : 'No disponible'; ?></p>
+    <p>Vendedor: <?php echo isset($detalle_ingreso['empleado_responsable']) ? $detalle_ingreso['empleado_responsable'] : 'No disponible'; ?></p>
     
     <table>
         <tr>
@@ -66,21 +66,21 @@ if (isset($_GET['id'])) {
         </tr>
         <?php foreach ($detalle_ingreso['productos'] as $producto): ?>
         <tr>
-            <td><?php echo $producto['codigo']; ?></td>
-            <td><?php echo $producto['Nombre']; ?></td>
-            <td><?php echo $producto['cantidad']; ?></td>
-            <td>$<?php echo number_format($producto['precio'], 2, ',', '.'); ?></td>
-            <td><?php echo $producto['iva']; ?>%</td>
-            <td>$<?php echo number_format($producto['subtotal'], 2, ',', '.'); ?></td>
+            <td><?php echo isset($producto['codigo']) ? $producto['codigo'] : 'No disponible'; ?></td>
+            <td><?php echo isset($producto['Nombre']) ? $producto['Nombre'] : 'No disponible'; ?></td>
+            <td><?php echo isset($producto['cantidad']) ? $producto['cantidad'] : 'No disponible'; ?></td>
+            <td>$<?php echo isset($producto['precio']) ? number_format($producto['precio'], 2, ',', '.') : 'No disponible'; ?></td>
+            <td><?php echo isset($producto['iva']) ? $producto['iva'] : '0'; ?>%</td>
+            <td>$<?php echo isset($producto['subtotal']) ? number_format($producto['subtotal'], 2, ',', '.') : 'No disponible'; ?></td>
         </tr>
         <?php endforeach; ?>
     </table>
 
-    <p class="total">Neto No Gravado: $<?php echo number_format($detalle_ingreso['neto_no_gravado'], 2, ',', '.'); ?></p>
-    <p class="total">Total Venta: $<?php echo number_format($detalle_ingreso['total_venta'], 2, ',', '.'); ?></p>
-    <p class="total">Impuesto: <?php echo $detalle_ingreso['iva_total']; ?>%</p>
-    <p class="total">Total a Cobrar: $<?php echo number_format($detalle_ingreso['total_cobrar'], 2, ',', '.'); ?></p>
-    <p class="total">Total Cobrado: $<?php echo number_format($detalle_ingreso['total_cobrado'], 2, ',', '.'); ?></p>
+    <p class="total">Neto No Gravado: $<?php echo isset($detalle_ingreso['neto_no_gravado']) ? number_format($detalle_ingreso['neto_no_gravado'], 2, ',', '.') : '0,00'; ?></p>
+    <p class="total">Total Venta: $<?php echo isset($detalle_ingreso['total_venta']) ? number_format($detalle_ingreso['total_venta'], 2, ',', '.') : '0,00'; ?></p>
+    <p class="total">Impuesto: <?php echo isset($detalle_ingreso['iva_total']) ? $detalle_ingreso['iva_total'] : '0'; ?>%</p>
+    <p class="total">Total a Cobrar: $<?php echo isset($detalle_ingreso['total_cobrar']) ? number_format($detalle_ingreso['total_cobrar'], 2, ',', '.') : '0,00'; ?></p>
+    <p class="total">Total Cobrado: $<?php echo isset($detalle_ingreso['total_cobrado']) ? number_format($detalle_ingreso['total_cobrado'], 2, ',', '.') : '0,00'; ?></p>
     
     <button onclick="window.print()">Imprimir / Guardar PDF</button>
 </div>

@@ -66,6 +66,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($conn->query($query) === TRUE) {
         echo "Compra insertada correctamente.";
+        
+        // Obtener el último ID de compra insertado para la tabla productos_compra
+        $compra_id = $conn->insert_id;
+
+        // Insertar los detalles de los productos en la tabla 'productos_compra'
+        foreach ($_POST['productos'] as $index => $producto_id) {
+            $cantidad = isset($_POST['cantidad'][$index]) ? floatval($_POST['cantidad'][$index]) : 0;
+        
+            // Obtener el precio de venta del producto desde la base de datos
+            $producto_result = $conn->query("SELECT costo FROM producto WHERE id = $producto_id");
+            $producto_data = $producto_result->fetch_assoc();
+            $precio = $producto_data['costo'];
+        
+            $iva_producto = $precio * $cantidad * 0.21; // IVA individual
+        
+            // Depuración de los valores antes de la inserción
+            echo "Producto ID: $producto_id, Cantidad: $cantidad, Precio: $precio, IVA: $iva_producto<br>";
+        
+            
+            // Insertar cada detalle de producto en la tabla productos_compra
+            $detalle_query = "INSERT INTO productos_compra (compra_id, producto, cantidad, precio_unitario, total)
+                              VALUES ('$compra_id', '$producto_nombre', '$cantidad', '$precio_unitario', '$total_producto')";
+
+            if (!$conn->query($detalle_query)) {
+                echo "Error al insertar detalle de producto: " . $conn->error;
+            }
+        }
     } else {
         echo "Error al insertar la compra: " . $conn->error;
     }
@@ -80,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 ?>
+
 
 <style>
     .container.mt-4 {

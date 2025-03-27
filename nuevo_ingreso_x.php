@@ -111,11 +111,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Insertar los productos en la tabla ingreso_productos
             foreach ($_POST['productos'] as $index => $producto_id) {
                 $cantidad = isset($_POST['cantidad'][$index]) ? floatval($_POST['cantidad'][$index]) : 0;
-                $precio = isset($_POST['precio'][$index]) ? floatval($_POST['precio'][$index]) : 0;
+            
+                // Obtener el precio de venta del producto desde la base de datos
+                $producto_result = $conn->query("SELECT Precio_de_Venta FROM producto WHERE id = $producto_id");
+                $producto_data = $producto_result->fetch_assoc();
+                $precio = $producto_data['Precio_de_Venta'];
+            
                 $iva_producto = $precio * $cantidad * 0.21; // IVA individual
-
+            
+                // Depuración de los valores antes de la inserción
+                echo "Producto ID: $producto_id, Cantidad: $cantidad, Precio: $precio, IVA: $iva_producto<br>";
+            
                 if ($cantidad > 0 && $precio > 0) {
-                    $sql_detalle = "INSERT INTO ingreso_productos (ingreso_id, producto_id, cantidad, precio, iva) VALUES (?, ?, ?, ?, ?)";
+                    $sql_detalle = "INSERT INTO ingreso_productosx(ingreso_id, producto_id, cantidad, precio, iva) VALUES (?, ?, ?, ?, ?)";
                     if ($stmt_detalle = $conn->prepare($sql_detalle)) {
                         $stmt_detalle->bind_param("iiidd", $ingreso_id, $producto_id, $cantidad, $precio, $iva_producto);
                         $stmt_detalle->execute();
@@ -197,6 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 </style>
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -246,20 +255,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <!-- Productos -->
-            <div class="producto-item">
-                <select name="productos[1]" class="form-control" id="producto_1" required onchange="actualizarPrecio(1)">
-                    <option value="">Seleccione un Producto</option>
-                    <?php while ($producto = $productos->fetch_assoc()) : ?>
-                        <option value="<?php echo $producto['id']; ?>" data-precio="<?php echo $producto['Precio_de_Venta']; ?>">
-                            <?php echo $producto['Nombre']; ?> - $<?php echo number_format($producto['Precio_de_Venta'], 2); ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
-                <input type="number" name="cantidad[1]" class="form-control mt-2" id="cantidad_1" placeholder="Cantidad" min="1" required oninput="actualizarPrecio(1)">
-                <input type="text" name="precio[1]" class="form-control mt-2" id="precio_1" placeholder="Precio" readonly>
-            </div>
+     
 
-            <button type="button" id="agregar-producto" class="btn btn-secondary mt-2">+ Agregar Producto</button>
+<!-- Botón para agregar un producto -->
+<button type="button" id="agregar-producto" class="btn btn-secondary mt-2" onclick="agregarProducto()">+ Agregar Producto</button>
+
+<script>
+// Productos iniciales, los productos deben estar disponibles en JavaScript
+const productos = <?php echo json_encode($productos->fetch_all(MYSQLI_ASSOC)); ?>;
+
+let productoCount = 1;
+
+// Función para agregar un nuevo campo de producto
+function agregarProducto() {
+    productoCount++;
+
+    // Crear el div para el nuevo producto
+    const productoDiv = document.createElement('div');
+    productoDiv.classList.add('producto-item');
+    productoDiv.id = `producto-item-${productoCount}`; // Añadimos un ID único para cada nuevo producto
+    
+    // Crear las opciones de productos dinámicamente
+    let optionsHTML = '<option value="">Seleccione un Producto</option>';
+    productos.forEach(function(producto) {
+        optionsHTML += `<option value="${producto.id}" data-precio="${producto.Precio_de_Venta}">
+                            ${producto.Nombre} - $${parseFloat(producto.Precio_de_Venta).toFixed(2)}
+                        </option>`;
+    });
+
+    // Rellenar el HTML de los nuevos campos
+    productoDiv.innerHTML = `
+        <select name="productos[${productoCount}]" class="form-control" id="producto_${productoCount}" required onchange="actualizarPrecio(${productoCount})">
+            ${optionsHTML}
+        </select>
+        <input type="number" name="cantidad[${productoCount}]" class="form-control mt-2" id="cantidad_${productoCount}" placeholder="Cantidad" min="1" required oninput="actualizarPrecio(${productoCount})">
+        <input type="text" name="precio[${productoCount}]" class="form-control mt-2" id="precio_${productoCount}" placeholder="Precio" readonly>
+    `;
+
+    // Añadir el nuevo campo de producto al formulario
+    document.querySelector('form').insertBefore(productoDiv, document.getElementById('agregar-producto'));
+}
+
+
+</script>
 
             <!-- Selección de Proveedor -->
             <div class="mb-3">
@@ -311,12 +349,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="mb-3">
                 <label for="tipo_factura" class="form-label">Tipo de Factura</label>
                 <select name="tipo_factura" class="form-control" required>
-                    <option value="A">Factura X</option>
-                   
+                    <option value="A">Factura x </option>
+                    
                 </select>
             </div>
-     
-
+  
 
 
             <!-- Estado -->
@@ -324,7 +361,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label for="estado" class="form-label">Estado</label>
                 <select name="estado" class="form-control" required>
                     <option value="pendiente">Pendiente</option>
-                    <option value="vencida">Vencida</option>
+                    <option value="vencido">Vencido</option>
                     <option value="facturado">Facturado</option>
                 </select>
             </div>

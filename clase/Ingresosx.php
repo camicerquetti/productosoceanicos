@@ -21,15 +21,14 @@ class Ingreso{
         $subtotal, 
         $iva, 
         $total, 
-        $proveedor, 
+        $proveedor, // Nombre del proveedor
         $tipo_factura, 
-        $cliente, 
-       
-        $productos_json
+        $cliente, // Nombre del cliente
+        $productos // Array de productos
     ) {
-        // Consulta SQL para la tabla ingresosx
-        $query = "INSERT INTO ingresosx (fecha, vencimiento, tipo_ingreso, descripcion, monto, estado, empleado_responsable, metodo_pago, metodo_transporte, subtotal, iva, total, proveedor, tipo_factura, cliente, producto) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // Consulta SQL para insertar el ingreso
+        $query = "INSERT INTO ingresosx (fecha, vencimiento, tipo_ingreso, descripcion, monto, estado, empleado_responsable, metodo_pago, metodo_transporte, subtotal, iva, total, proveedor, tipo_factura, cliente) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
         // Preparamos la consulta
         $stmt = $this->conn->prepare($query);
@@ -39,7 +38,7 @@ class Ingreso{
         }
     
         // Vinculamos los parámetros
-        if (!$stmt->bind_param("ssssddssdddsds", 
+        if (!$stmt->bind_param("ssssddssdddsdss", 
             $fecha, 
             $vencimiento, 
             $tipo_ingreso, 
@@ -52,21 +51,45 @@ class Ingreso{
             $subtotal,      // double
             $iva,           // double
             $total,         // double
-            $proveedor,  // Nombre del proveedor (varchar)
-            $tipo_factura,  // tipo de factura (varchar)
-            $cliente,    // Nombre del cliente (varchar)
-
-            $productos_json // JSON de productos (varchar o text)
+            $proveedor,     // Nombre del proveedor (varchar)
+            $tipo_factura,  // Tipo de factura (varchar)
+            $cliente        // Nombre del cliente (varchar)
         )) {
             throw new Exception("Error al enlazar parámetros: " . $stmt->error);
         }
     
-        // Ejecutamos la consulta
+        // Ejecutamos la consulta para insertar el ingreso
         if (!$stmt->execute()) {
-            throw new Exception("Error al ejecutar la consulta: " . $stmt->error);
+            throw new Exception("Error al ejecutar la consulta de inserción: " . $stmt->error);
         }
     
-        return true;
+        // Obtener el ID del ingreso recién insertado
+        $ingreso_id = $this->conn->insert_id;
+    
+        // Insertar los productos en la tabla ingreso_productosx
+        foreach ($productos as $producto) {
+            // Aseguramos que el producto tiene la cantidad, precio y otros detalles
+            if (!empty($producto['id']) && !empty($producto['cantidad']) && !empty($producto['precio'])) {
+                $producto_id = $producto['id'];
+                $cantidad = $producto['cantidad'];
+                $precio = $producto['precio'];
+                $iva_producto = $precio * $cantidad * 0.21;
+    
+                // Consulta para insertar el producto en la tabla ingreso_productosx
+                $sql_detalle = "INSERT INTO ingreso_productosx (ingreso_id, producto_id, cantidad, precio, iva) 
+                                VALUES (?, ?, ?, ?, ?)";
+    
+                // Preparamos la consulta para los detalles del producto
+                if ($stmt_detalle = $this->conn->prepare($sql_detalle)) {
+                    $stmt_detalle->bind_param("iiidd", $ingreso_id, $producto_id, $cantidad, $precio, $iva_producto);
+                    if (!$stmt_detalle->execute()) {
+                        throw new Exception("Error al insertar el producto en ingreso_productosx: " . $stmt_detalle->error);
+                    }
+                }
+            }
+        }
+    
+        return $ingreso_id; // Retornamos el ID del ingreso recién insertado
     }
     
 
@@ -176,7 +199,7 @@ class Ingreso{
         // Obtener productos asociados a la factura
         $sql_productos = "SELECT p.Codigo, p.Nombre, i.cantidad, i.precio, i.iva, 
         (i.cantidad * i.precio) as subtotal
-        FROM ingreso_productos i
+        FROM ingreso_productosx i
         INNER JOIN producto p ON i.producto_id = p.id
         WHERE i.ingreso_id = ?";
 

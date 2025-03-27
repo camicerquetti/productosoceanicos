@@ -25,10 +25,10 @@ class Ingreso {
         $tipo_factura, 
         $cliente, // Ahora este parámetro es el nombre del cliente
         $id_cuenta,
-        $productos_json
+        $productos // Esto ahora es un array de productos
     ) {
-        // Consulta SQL
-        $query = "INSERT INTO ingresos (fecha, vencimiento, tipo_ingreso, descripcion, monto, estado, empleado_responsable, metodo_pago, metodo_transporte, subtotal, iva, total, proveedor, tipo_factura, cliente,id_cuenta, producto) 
+        // Consulta SQL para insertar el ingreso
+        $query = "INSERT INTO ingresos (fecha, vencimiento, tipo_ingreso, descripcion, monto, estado, empleado_responsable, metodo_pago, metodo_transporte, subtotal, iva, total, proveedor, tipo_factura, cliente, id_cuenta) 
                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     
         // Preparamos la consulta
@@ -55,21 +55,45 @@ class Ingreso {
             $proveedor,  // Nombre del proveedor (varchar)
             $tipo_factura,  // tipo de factura (varchar)
             $cliente,    // Nombre del cliente (varchar)
-            $id_cuenta,    // Nombre del cliente (varchar)
-            $productos_json // JSON de productos (varchar o text)
+            $id_cuenta    // Nombre del cliente (varchar)
         )) {
             throw new Exception("Error al enlazar parámetros: " . $stmt->error);
         }
     
-        // Ejecutamos la consulta
+        // Ejecutamos la consulta para insertar el ingreso
         if (!$stmt->execute()) {
-            throw new Exception("Error al ejecutar la consulta: " . $stmt->error);
+            throw new Exception("Error al ejecutar la consulta de inserción: " . $stmt->error);
         }
     
-        return true;
+        // Obtener el ID del ingreso recién insertado
+        $ingreso_id = $this->conn->insert_id;
+    
+        // Insertar los productos en la tabla ingreso_productos
+        foreach ($productos as $producto) {
+            // Aseguramos que el producto tiene la cantidad, precio y otros detalles
+            if (!empty($producto['id']) && !empty($producto['cantidad']) && !empty($producto['precio'])) {
+                $producto_id = $producto['id'];
+                $cantidad = $producto['cantidad'];
+                $precio = $producto['precio'];
+                $iva_producto = $precio * $cantidad * 0.21;
+    
+                // Consulta para insertar el producto en la tabla ingreso_productos
+                $sql_detalle = "INSERT INTO ingreso_productos (ingreso_id, producto_id, cantidad, precio, iva) 
+                                VALUES (?, ?, ?, ?, ?)";
+                
+                // Preparamos la consulta para los detalles del producto
+                if ($stmt_detalle = $this->conn->prepare($sql_detalle)) {
+                    $stmt_detalle->bind_param("iiidd", $ingreso_id, $producto_id, $cantidad, $precio, $iva_producto);
+                    if (!$stmt_detalle->execute()) {
+                        throw new Exception("Error al insertar el producto en ingreso_productos: " . $stmt_detalle->error);
+                    }
+                }
+            }
+        }
+    
+        return $ingreso_id; // Retornamos el ID del ingreso recién insertado
     }
     
-
     // Función para verificar y actualizar el estado de las facturas a "vencida"
     public function actualizarEstadoVencido() {
         $query = "UPDATE ingresos SET estado = 'vencida' WHERE estado = 'pendiente' AND TIMESTAMPDIFF(HOUR, fecha, NOW()) > 24";
