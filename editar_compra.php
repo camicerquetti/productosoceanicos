@@ -202,7 +202,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
                 </div>
 
                 <button type="submit" class="btn btn-success">Actualizar Compra</button>
-                <a href="lista_compras.php" class="btn btn-secondary">Cancelar</a>
+                <a href="compras.php" class="btn btn-secondary">Cancelar</a>
             </form>
         </div>
     </div>

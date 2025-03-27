@@ -1,5 +1,4 @@
 <?php
-
 // Incluir la conexión a la base de datos
 include('config.php');
 
@@ -13,32 +12,34 @@ $ultimo_dia_mes = date('Y-m-t');
 // Consultas SQL para obtener los totales
 $consultas = [
     'ingresos' => "
-        SELECT SUM(monto) AS total_ingresos
+        SELECT SUM(total) AS total_ingresos
         FROM ingresos
         WHERE estado = 'pagado' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
     ",
     'egresos' => "
         SELECT SUM(monto) AS total_egresos
         FROM egresos
-        WHERE estado = 'pagado' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
+        WHERE estado = 'confirmado' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
     ",
     'compras_a_cobrar' => "
-        SELECT SUM(monto) AS total_compras_a_cobrar
+        SELECT SUM(total) AS total_compras_a_cobrar
         FROM compras
-        WHERE estado = 'pagado' AND estado_compra = 'a_cobrar' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
+        WHERE estado = 'a pagar' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
     ",
     'compras_a_pagar' => "
-        SELECT SUM(monto) AS total_compras_a_pagar
+        SELECT SUM(total) AS total_compras_a_pagar
         FROM compras
-        WHERE estado = 'pagado' AND estado_compra = 'a_pagar' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
+        WHERE estado = 'pagado' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
     ",
     'gastos_a_cobrar' => "
-        SELECT * FROM gastos
-        WHERE estado = 'a_cobrar' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
+        SELECT SUM(monto) AS total_gastos_a_cobrar
+        FROM gastos
+        WHERE estado = 'pendiente' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
     ",
     'gastos_a_pagar' => "
-        SELECT * FROM gastos
-        WHERE estado = 'a_pagar' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
+        SELECT SUM(monto) AS total_gastos_a_pagar
+        FROM gastos
+        WHERE estado = 'confirmado' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
     ",
     'ingresos_lista' => "
         SELECT * FROM ingresos
@@ -46,7 +47,23 @@ $consultas = [
     ",
     'egresos_lista' => "
         SELECT * FROM egresos
+        WHERE estado = 'confirmado' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
+    ",
+    'compras_a_cobrar_lista' => "
+        SELECT * FROM compras
+        WHERE estado = 'a pagar' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
+    ",
+    'compras_a_pagar_lista' => "
+        SELECT * FROM compras
         WHERE estado = 'pagado' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
+    ",
+    'gastos_a_cobrar_lista' => "
+        SELECT * FROM gastos
+        WHERE estado = 'pendiente' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
+    ",
+    'gastos_a_pagar_lista' => "
+        SELECT * FROM gastos
+        WHERE estado = 'confirmado' AND fecha BETWEEN '$primer_dia_mes' AND '$ultimo_dia_mes'
     "
 ];
 
@@ -69,10 +86,10 @@ foreach ($consultas as $clave => $query) {
 
 // Verificar si el resultado de 'gastos' existe
 if (!isset($resultados['gastos_a_cobrar'])) {
-    $resultados['gastos_a_cobrar'] = [];
+    $resultados['gastos_a_cobrar'] = '0.00';
 }
 if (!isset($resultados['gastos_a_pagar'])) {
-    $resultados['gastos_a_pagar'] = [];
+    $resultados['gastos_a_pagar'] = '0.00';
 }
 if (!isset($resultados['ingresos_lista'])) {
     $resultados['ingresos_lista'] = [];
@@ -80,7 +97,20 @@ if (!isset($resultados['ingresos_lista'])) {
 if (!isset($resultados['egresos_lista'])) {
     $resultados['egresos_lista'] = [];
 }
+if (!isset($resultados['compras_a_cobrar_lista'])) {
+    $resultados['compras_a_cobrar_lista'] = [];
+}
+if (!isset($resultados['compras_a_pagar_lista'])) {
+    $resultados['compras_a_pagar_lista'] = [];
+}
+if (!isset($resultados['gastos_a_cobrar_lista'])) {
+    $resultados['gastos_a_cobrar_lista'] = [];
+}
+if (!isset($resultados['gastos_a_pagar_lista'])) {
+    $resultados['gastos_a_pagar_lista'] = [];
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -147,8 +177,12 @@ include('headeradmin.php');
                     <td>$<?php echo $resultados['compras_a_pagar']; ?></td>
                 </tr>
                 <tr>
-                    <td>Gastos</td>
-                    <td>$<?php echo isset($resultados['gastos']) ? $resultados['gastos'] : '0.00'; ?></td>
+                    <td>Gastos a Cobrar</td>
+                    <td>$<?php echo $resultados['gastos_a_cobrar']; ?></td>
+                </tr>
+                <tr>
+                    <td>Gastos a Pagar</td>
+                    <td>$<?php echo $resultados['gastos_a_pagar']; ?></td>
                 </tr>
             </tbody>
         </table>
@@ -157,6 +191,8 @@ include('headeradmin.php');
         <button class="btn btn-info" onclick="toggleVisibility('gastosAPagar')">Ver Gastos a Pagar</button>
         <button class="btn btn-info" onclick="toggleVisibility('ingresosLista')">Ver Ingresos</button>
         <button class="btn btn-info" onclick="toggleVisibility('egresosLista')">Ver Egresos</button>
+        <button class="btn btn-info" onclick="toggleVisibility('comprasACobrar')">Ver Compras a Cobrar</button>
+        <button class="btn btn-info" onclick="toggleVisibility('comprasAPagar')">Ver Compras a Pagar</button>
 
         <!-- Listas detalladas (ocultas por defecto) -->
         <div id="gastosACobrar" class="hidden">
@@ -171,7 +207,7 @@ include('headeradmin.php');
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($resultados['gastos_a_cobrar'] as $gasto): ?>
+                    <?php foreach ($resultados['gastos_a_cobrar_lista'] as $gasto): ?>
                         <tr>
                             <td><?php echo $gasto['id']; ?></td>
                             <td><?php echo $gasto['fecha']; ?></td>
@@ -195,7 +231,7 @@ include('headeradmin.php');
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($resultados['gastos_a_pagar'] as $gasto): ?>
+                    <?php foreach ($resultados['gastos_a_pagar_lista'] as $gasto): ?>
                         <tr>
                             <td><?php echo $gasto['id']; ?></td>
                             <td><?php echo $gasto['fecha']; ?></td>
@@ -223,7 +259,7 @@ include('headeradmin.php');
                         <tr>
                             <td><?php echo $ingreso['id']; ?></td>
                             <td><?php echo $ingreso['fecha']; ?></td>
-                            <td>$<?php echo number_format($ingreso['monto'], 2); ?></td>
+                            <td>$<?php echo number_format($ingreso['total'], 2); ?></td>
                             <td><?php echo $ingreso['descripcion']; ?></td>
                         </tr>
                     <?php endforeach; ?>
@@ -249,6 +285,58 @@ include('headeradmin.php');
                             <td><?php echo $egreso['fecha']; ?></td>
                             <td>$<?php echo number_format($egreso['monto'], 2); ?></td>
                             <td><?php echo $egreso['descripcion']; ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="comprasACobrar" class="hidden">
+            <h3>Compras a Cobrar</h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Proveedor</th>
+                        <th>Total</th>
+                        <th>Categoria</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($resultados['compras_a_cobrar_lista'] as $compra): ?>
+                        <tr>
+                            <td><?php echo $compra['id']; ?></td>
+                            <td><?php echo $compra['fecha']; ?></td>
+                            <td><?php echo $compra['proveedor']; ?></td>
+                            <td>$<?php echo number_format($compra['total'], 2); ?></td>
+                            <td><?php echo $compra['categoria']; ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="comprasAPagar" class="hidden">
+            <h3>Compras a Pagar</h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Proveedor</th>
+                        <th>Total</th>
+                        <th>Categoria</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($resultados['compras_a_pagar_lista'] as $compra): ?>
+                        <tr>
+                            <td><?php echo $compra['id']; ?></td>
+                            <td><?php echo $compra['fecha']; ?></td>
+                            <td><?php echo $compra['proveedor']; ?></td>
+                            <td>$<?php echo number_format($compra['total'], 2); ?></td>
+                            <td><?php echo $compra['categoria']; ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

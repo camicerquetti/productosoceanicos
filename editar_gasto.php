@@ -151,7 +151,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
                 </div>
 
                 <button type="submit" class="btn btn-success">Actualizar Gasto</button>
-                <a href="lista_gastos.php" class="btn btn-secondary">Cancelar</a>
+                <a href="gastos.php" class="btn btn-secondary">Cancelar</a>
             </form>
         </div>
     </div>
